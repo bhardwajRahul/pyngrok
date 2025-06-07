@@ -10,6 +10,8 @@ Flask
 .. image:: https://img.shields.io/badge/Clone_on_GitHub-black?logo=github
    :target: https://github.com/alexdlaird/pyngrok-example-flask
 
+The Flask example includes a ``Dockerfile`` to highlight a `containerized use case <#docker>`_.
+
 In ``server.py``, `where your Flask app is initialized <https://flask.palletsprojects.com/en/1.1.x/tutorial/factory/#the-application-factory>`_,
 you should add a variable that let's you configure from an environment variable whether you want to open a tunnel
 to ``localhost`` with ``ngrok`` when the dev server starts. You can initialize the ``pyngrok`` tunnel in this
@@ -23,7 +25,7 @@ same place.
     from flask import Flask
 
     def init_webhooks(base_url):
-        # Update inbound traffic via APIs to use the public-facing ngrok URL
+        # ... Implement updates necessary so inbound traffic uses the public-facing ngrok URL
         pass
 
     def create_app():
@@ -36,7 +38,7 @@ same place.
         )
 
         if app.config["USE_NGROK"]:
-            # pyngrok will only be installed, and should only ever be initialized, in a dev environment
+            # Only import pyngrok and install if we're actually going to use it
             from pyngrok import ngrok
 
             # Get the dev server port (defaults to 5000 for Flask, can be overridden with `--port`
@@ -51,7 +53,7 @@ same place.
             app.config["BASE_URL"] = public_url
             init_webhooks(public_url)
 
-        # ... Initialize Blueprints and the rest of your app
+        # ... Implement Blueprints and the rest of your app
 
         return app
 
@@ -59,7 +61,9 @@ Now Flask can be started in development by the usual means, setting ``USE_NGROK`
 
 .. code-block:: sh
 
-    USE_NGROK=True NGROK_AUTHTOKEN=<AUTHTOKEN> FLASK_APP=server.py flask run
+    USE_NGROK=True NGROK_AUTHTOKEN=$NGROK_AUTHTOKEN \
+        FLASK_APP=server.py \
+        flask run
 
 Django
 ------
@@ -76,7 +80,7 @@ variable that let's you configure from an environment variable whether you want 
     import os
     import sys
 
-    # ... The rest of your Django settings
+    # ... Implement the rest of your Django settings
 
     BASE_URL = "http://localhost:8000"
 
@@ -101,7 +105,7 @@ to do this is one of your ``apps.py`` by `extending AppConfig <https://docs.djan
 
         def ready(self):
             if settings.USE_NGROK:
-                # pyngrok will only be installed, and should only ever be initialized, in a dev environment
+                # Only import pyngrok and install if we're actually going to use it
                 from pyngrok import ngrok
 
                 # Get the dev server port (defaults to 8000 for Django, can be overridden with the
@@ -119,14 +123,15 @@ to do this is one of your ``apps.py`` by `extending AppConfig <https://docs.djan
 
         @staticmethod
         def init_webhooks(base_url):
-            # Update inbound traffic via APIs to use the public-facing ngrok URL
+            # ... Implement updates necessary so inbound traffic uses the public-facing ngrok URL
             pass
 
 Now the Django dev server can be started by the usual means, setting ``USE_NGROK`` to open a tunnel.
 
 .. code-block:: sh
 
-    USE_NGROK=True NGROK_AUTHTOKEN=<AUTHTOKEN> python manage.py runserver
+    USE_NGROK=True NGROK_AUTHTOKEN=$NGROK_AUTHTOKEN \
+        python manage.py runserver
 
 FastAPI
 -------
@@ -148,7 +153,7 @@ you should add a variable that let's you configure from an environment variable 
 
 
     class Settings(BaseSettings):
-        # ... The rest of your FastAPI settings
+        # ... Implement the rest of your FastAPI settings
 
         BASE_URL = "http://localhost:8000"
         USE_NGROK = os.environ.get("USE_NGROK", "False") == "True"
@@ -158,7 +163,7 @@ you should add a variable that let's you configure from an environment variable 
 
 
     def init_webhooks(base_url):
-        # Update inbound traffic via APIs to use the public-facing ngrok URL
+        # ... Implement updates necessary so inbound traffic uses the public-facing ngrok URL
         pass
 
 
@@ -166,7 +171,7 @@ you should add a variable that let's you configure from an environment variable 
     app = FastAPI()
 
     if settings.USE_NGROK:
-        # pyngrok should only ever be installed or initialized in a dev environment when this flag is set
+        # Only import pyngrok and install if we're actually going to use it
         from pyngrok import ngrok
 
         # Get the dev server port (defaults to 8000 for Uvicorn, can be overridden with `--port`
@@ -181,14 +186,53 @@ you should add a variable that let's you configure from an environment variable 
         settings.BASE_URL = public_url
         init_webhooks(public_url)
 
-    # ... Initialize routers and the rest of your app
+    # ... Implement routers and the rest of your app
 
 Now FastAPI can be started by the usual means, with `Uvicorn <https://www.uvicorn.org/#usage>`_, setting
 ``USE_NGROK`` to open a tunnel.
 
 .. code-block:: sh
 
-    USE_NGROK=True NGROK_AUTHTOKEN=<AUTHTOKEN> uvicorn server:app
+    USE_NGROK=True NGROK_AUTHTOKEN=$NGROK_AUTHTOKEN \
+        uvicorn server:app
+
+Docker
+------
+
+``pyngrok`` provides `pre-built container images on Docker Hub <https://hub.docker.com/r/alexdlaird/pyngrok>`_.
+
+To launch the container in to a Python shell, run:
+
+.. code-block:: shell
+
+    docker run -e NGROK_AUTHTOKEN=$NGROK_AUTHTOKEN -it alexdlaird/pyngrok
+
+The `pyngrok-example-flask repository <https://github.com/alexdlaird/pyngrok-example-flask>`_ also includes a
+``Dockerfile`` and ``make`` commands to run it, if you would like to see a complete example.
+
+Here is an example of how you could launch the container using ``docker-compose.yml``, where you also want a given Python
+script to run on startup:
+
+.. code-block:: yaml
+
+    services:
+      ngrok:
+        image: alexdlaird/pyngrok
+        env_file: ".env"
+        command:
+          - "python /root/my-script.py"
+        volumes:
+          - ./my-script.py:/root/my-script.py
+        ports:
+          - 4040:4040
+
+Then launch it with:
+
+.. code-block:: shell
+
+    docker compose up -d
+
+For more usage examples, as well as a breakdown of image tags, head over to `Docker Hub <https://hub.docker.com/r/alexdlaird/pyngrok>`_.
 
 Google Colaboratory
 -------------------
@@ -254,8 +298,7 @@ assumes you have also added ``!pip install flask`` to your dependency code block
     # Update any base URLs to use the public ngrok URL
     app.config["BASE_URL"] = public_url
 
-    # ... Update inbound traffic via APIs to use the public-facing ngrok URL
-
+    # ... Implement updates necessary so inbound traffic uses the public-facing ngrok URL
 
     # Define Flask routes
     @app.route("/")
@@ -274,12 +317,13 @@ service that automatically updates a status page.
 
 Whatever the case may be, extending `unittest.TestCase <https://docs.python.org/3/library/unittest.html#unittest.TestCase>`_
 and adding your own fixtures that start the dev server and open a ``pyngrok`` tunnel is relatively simple. This
-snippet builds on the `Flask example above <#flask>`_, but it could be easily modified to work with Django or another
-framework if its dev server was started/stopped in the ``start_dev_server()`` and ``stop_dev_server()`` methods
-and ``PORT`` was changed.
+snippet builds on the `Flask example above <#flask>`_, but it could be modified to work with other
+frameworks.
 
 .. code-block:: python
 
+    import os
+    import signal
     import unittest
     import threading
 
@@ -291,15 +335,18 @@ and ``PORT`` was changed.
 
 
     class PyngrokTestCase(unittest.TestCase):
-        # Default Flask port
-        PORT = "5000"
-
         @classmethod
         def start_dev_server(cls):
             app = create_app()
 
             def shutdown():
-                request.environ.get("werkzeug.server.shutdown")()
+                # Newer versions of Werkzeug and Flask don't provide this environment variable
+                if "werkzeug.server.shutdown" in request.environ:
+                    request.environ.get("werkzeug.server.shutdown")()
+                else:
+                    # Windows does not provide SIGKILL, go with SIGTERM then
+                    sig = getattr(signal, "SIGKILL", signal.SIGTERM)
+                    os.kill(os.getpid(), sig)
 
             @app.route("/shutdown", methods=["POST"])
             def route_shutdown():
@@ -308,39 +355,33 @@ and ``PORT`` was changed.
 
             threading.Thread(target=app.run).start()
 
+            return app
+
         @classmethod
         def stop_dev_server(cls):
             req = request.Request("http://localhost:5000/shutdown", method="POST")
             request.urlopen(req)
 
         @classmethod
-        def init_webhooks(cls, base_url):
-            webhook_url = f"{base_url}/foo"
-
-            # ... Update inbound traffic via APIs to use the public-facing ngrok URL
-
-        @classmethod
-        def init_pyngrok(cls):
-            # Open a ngrok tunnel to the dev server
-            public_url = ngrok.connect(PORT).public_url
-
-            # Update any base URLs or webhooks to use the public ngrok URL
-            cls.init_webhooks(public_url)
-
-        @classmethod
         def setUpClass(cls):
-            cls.start_dev_server()
+            # Ensure a tunnel is opened and webhooks initialized when the dev server is started
+            os.environ["USE_NGROK"] = True
 
-            cls.init_pyngrok()
+            app = cls.start_dev_server()
+
+            cls.base_url = app.config["BASE_URL"]
+
+            # ... Implement other initializes so you can assert against the inbound traffic through your tunnel
 
         @classmethod
         def tearDownClass(cls):
             cls.stop_dev_server()
 
-Now, any test that needs a ``pyngrok`` tunnel can simply extend ``PyngrokTestCase`` to inherit these fixtures.
-If you want the ``pyngrok`` tunnel to remain open across numerous tests, it may be more efficient to
-`setup these fixtures at the suite or module level instead <https://docs.python.org/3/library/unittest.html#class-and-module-fixtures>`_,
-which would also be a simple change.
+            ngrok.kill()
+
+Now, any test that needs to assert against responses through a ``pyngrok`` tunnel can simply extend ``PyngrokTestCase``
+to inherit these fixtures. If you want the ``pyngrok`` tunnel to remain open across numerous tests, it may be more
+efficient to `setup these fixtures at the suite or module level instead <https://docs.python.org/3/library/unittest.html#class-and-module-fixtures>`_.
 
 AWS Lambda (Local)
 ------------------
@@ -373,15 +414,15 @@ To start, add ``app.register_blueprint(lambda_routes.bp)`` to ``server.py`` from
 
         return json.dumps(foo_GET.lambda_handler(event, {}))
 
-For a complete example of how you can leverage all these things together to rapidly and reliably develop, test,
+For a complete example of how you can leverage all these things together to rapidly develop, test,
 and deploy AWS Lambda's, check out `the Air Quality Bot repository <https://github.com/alexdlaird/air-quality-bot>`_
 and have a look at the ``Makefile`` and ``devserver.py``.
 
-Python HTTP Server
+Simple HTTP Server
 ------------------
 
 Python's `http.server module <https://docs.python.org/3/library/http.server.html>`_ also makes for a useful development
-server. You can use ``pyngrok`` to expose it to the web via a tunnel, as show in ``server.py`` here:
+server. You can use ``pyngrok`` to expose it to the web via a tunnel, as shown in ``server.py`` here:
 
 .. code-block:: python
 
@@ -410,17 +451,17 @@ You can then run this script to start the server.
 
 .. code-block:: sh
 
-    NGROK_AUTHTOKEN=<AUTHTOKEN> python server.py
+    NGROK_AUTHTOKEN=$NGROK_AUTHTOKEN python server.py
 
-Python TCP Server and Client
+Simple TCP Server and Client
 ----------------------------
 
 Here is an example of a simple TCP ping/pong server. It opens a local socket, uses ``ngrok`` to tunnel to that
 socket, then the client/server communicate via the publicly exposed address.
 
-For this code to run, you first need to go to
-`ngrok's Reserved TCP Addresses <https://dashboard.ngrok.com/tcp-addresses>`_ and make a reservation. Set the ``HOST``
-and ``PORT`` environment variables pointing to that reserved address.
+For this code to run, you'll first need a reserved TCP address, which you obtain using
+`ngrok's API <index.html#ngrok-s-api>`_. Set the ``HOST`` and ``PORT`` environment variables pointing to that reserved
+address.
 
 Now create ``server.py`` with the following code:
 
@@ -479,7 +520,9 @@ In a terminal window, you can now start your socket server:
 
 .. code-block:: sh
 
-    NGROK_AUTHTOKEN=<AUTHTOKEN> HOST="1.tcp.ngrok.io" PORT=12345 python server.py
+    NGROK_AUTHTOKEN=$NGROK_AUTHTOKEN \
+        HOST="1.tcp.ngrok.io" PORT=12345 \
+        python server.py
 
 It's now waiting for incoming connections, so let's write a client to connect to it and send it something.
 
@@ -521,6 +564,7 @@ In another terminal window, you can run your client:
 
 .. code-block:: sh
 
-    HOST="1.tcp.ngrok.io" PORT=12345 python client.py
+    HOST="1.tcp.ngrok.io" PORT=12345 \
+        python client.py
 
 And that's it! Data was sent and received from a socket via your ``ngrok`` tunnel.

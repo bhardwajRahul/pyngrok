@@ -105,14 +105,15 @@ see [`ngrok`'s official documentation](https://ngrok.com/docs/agent/cli/).
 ## Documentation
 
 For more advanced usage, `pyngrok`'s official documentation is available
-at [https://pyngrok.readthedocs.io](https://pyngrok.readthedocs.io).
+on [Read the Docs](https://pyngrok.readthedocs.io).
 
 ### Integration Examples
 
 - [Flask](https://pyngrok.readthedocs.io/en/latest/integrations.html#flask)
 - [Django](https://pyngrok.readthedocs.io/en/latest/integrations.html#django)
-- [End-to-End Testing](https://pyngrok.readthedocs.io/en/latest/integrations.html#end-to-end-testing)
+- [Docker](https://pyngrok.readthedocs.io/en/latest/integrations.html#docker)
 - [Google Colab](https://pyngrok.readthedocs.io/en/latest/integrations.html#google-colaboratory)
+- [End-to-End Testing](https://pyngrok.readthedocs.io/en/latest/integrations.html#end-to-end-testing)
 
 ## Contributing
 

@@ -89,27 +89,6 @@ config file), `as documented here <#tunnel-configurations>`__.
     the ``http`` tunnel in this case. If only a single tunnel is needed, pass ``bind_tls=True`` and a reference to
     the ``https`` tunnel will be returned.
 
-``ngrok``'s API
----------------
-
-The `api <https://pyngrok.readthedocs.io/en/latest/api.html#pyngrok.ngrok.api>`_ method allows you to use the local
-``ngrok`` agent to make requests against `the ngrok API <https://ngrok.com/docs/agent/cli-api/>`_, if you have
-`set an API key <https://pyngrok.readthedocs.io/en/latest/#setting-the-authtoken-or-api-key>`_.
-For example, here's how you would reserve a ``ngrok`` domain, then create a Cloud Endpoint with an associated traffic
-policy:
-
-.. code-block:: python
-
-    from pyngrok import ngrok
-
-    domain = "some-domain.ngrok.dev"
-    ngrok.api("reserved-domains", "create",
-              "--domain", domain)
-    ngrok.api("endpoints", "create",
-              "--bindings", "public",
-              "--url", f"https://{domain}",
-              "--traffic-policy-file", "policy.yml")
-
 ``ngrok``'s Edges
 -----------------
 
@@ -181,7 +160,8 @@ can be accomplished by using ``pyngrok`` to open a ``tcp`` tunnel to the desired
 
     # Open a tunnel to MySQL with a Reserved TCP Address
     # <NgrokTunnel: "tcp://1.tcp.ngrok.io:12345" -> "localhost:3306">
-    ngrok.connect("3306", "tcp",
+    ngrok.connect("3306",
+                  "tcp",
                   remote_addr="1.tcp.ngrok.io:12345")
 
 You can also serve up local directories via `ngrok's built-in fileserver <https://ngrok.com/docs/universal-gateway/http/?cty=agent-config#agent-endpoint>`_.
@@ -224,6 +204,27 @@ you can start it by its ``name``.
     # <NgrokTunnel: "https://<public_sub>.ngrok.io" -> "http://localhost:??">
     ngrok_tunnel = ngrok.connect(name="my-config-file-tunnel")
 
+
+``ngrok``'s API
+===============
+
+The `api <https://pyngrok.readthedocs.io/en/latest/api.html#pyngrok.ngrok.api>`_ method allows you to use the local
+``ngrok`` agent to make requests against `the ngrok API <https://ngrok.com/docs/agent/cli-api/>`_, if you have
+`set an API key <https://pyngrok.readthedocs.io/en/latest/#setting-the-authtoken-or-api-key>`_.
+For example, here's how you would reserve a ``ngrok`` domain, then create a Cloud Endpoint with an associated traffic
+policy:
+
+.. code-block:: python
+
+    from pyngrok import ngrok
+
+    domain = "some-domain.ngrok.dev"
+    ngrok.api("reserved-domains", "create",
+              "--domain", domain)
+    ngrok.api("endpoints", "create",
+              "--bindings", "public",
+              "--url", f"https://{domain}",
+              "--traffic-policy-file", "policy.yml")
 
 The ``ngrok`` Process
 =====================
@@ -336,9 +337,9 @@ still running by calling its :func:`~pyngrok.process.NgrokProcess.healthy` metho
     will be installed the first time most methods in the :mod:`~pyngrok.ngrok` module are called.
 
     If you need to customize the installation of ``ngrok``, perhaps specifying a timeout, proxy, use a custom mirror
-    for the download, etc. you can do so by leveraging the :mod:`~pyngrok.installer` module. Keyword arguments in this
+    for the download, etc., you can do so by leveraging the :mod:`~pyngrok.installer` module. Keyword arguments in this
     module are ultimately passed down to :py:func:`urllib.request.urlopen`, so as long as you use the
-    :mod:`~pyngrok.installer` module ourselves prior to invoking any :mod:`~pyngrok.ngrok` methods, you can can control
+    :mod:`~pyngrok.installer` module yourself prior to invoking any :mod:`~pyngrok.ngrok` methods, you can can control
     how ``ngrok`` is installed and from where.
 
 Setting the ``authtoken`` or ``api_key``
@@ -347,7 +348,7 @@ Setting the ``authtoken`` or ``api_key``
 Running ``ngrok`` with an auth token and  API key enables access to more features available on your account (for
 instance, multiple concurrent tunnels, custom domains, use of
 `Internal Endpoints <https://ngrok.com/docs/universal-gateway/internal-endpoints/>`_, etc). You can obtain your
-auth token and generate API keys from the `ngrok dashboard <https://dashboard.ngrok.com>`_, then install it to
+auth token and generate API keys from the `ngrok dashboard <https://dashboard.ngrok.com>`_, then install in to
 ``ngrok``'s config file.
 
 .. code-block:: python
